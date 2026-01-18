@@ -2,11 +2,7 @@ from flask import Flask, request, send_file, jsonify
 import os
 import uuid
 import pandas as pd
-import sys
 import tempfile
-
-# Add parent directory to path to import validator
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'backend'))
 from validator import generate_validation_report
 
 app = Flask(__name__)
