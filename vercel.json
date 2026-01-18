@@ -1,5 +1,5 @@
 {
-  "buildCommand": "sh build.sh",
+  "buildCommand": "cd frontend && (npm ci || npm install) && npm run build && cd .. && cp -R frontend/build ./build",
   "outputDirectory": "build",
   "framework": null,
   "functions": {
