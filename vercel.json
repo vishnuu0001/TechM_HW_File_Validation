@@ -1,5 +1,5 @@
 {
-  "buildCommand": "npm run build:vercel",
+  "buildCommand": "sh build.sh",
   "outputDirectory": "build",
   "framework": null,
   "functions": {
