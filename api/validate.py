@@ -4,16 +4,22 @@ import uuid
 import pandas as pd
 import tempfile
 import json
+from io import BytesIO
 from validator import generate_validation_report
 
 # Create Flask app for Vercel WSGI
 app = Flask(__name__)
 
 
-def validate_file_structure(file_path):
-    """Validate that the uploaded Excel file has the required structure"""
+def validate_file_structure(file_bytes):
+    """Validate that the uploaded Excel file has the required structure
+    
+    Args:
+        file_bytes: BytesIO object containing the file data (in memory)
+    """
     try:
-        excel_file = pd.ExcelFile(file_path)
+        # Read Excel file from memory (no disk I/O needed)
+        excel_file = pd.ExcelFile(file_bytes)
         sheet_names = excel_file.sheet_names
         
         required_sheets = ['README-Glossary', 'Compute']
@@ -23,7 +29,9 @@ def validate_file_structure(file_path):
             return f"Invalid file structure. Missing required sheet(s): {', '.join(missing_sheets)}. Please upload the correct Combined Data File."
         
         try:
-            df_glossary = pd.read_excel(file_path, sheet_name='README-Glossary', header=6)
+            # Read from memory, no disk access
+            file_bytes.seek(0)  # Reset pointer to start
+            df_glossary = pd.read_excel(file_bytes, sheet_name='README-Glossary', header=6)
             required_glossary_columns = ['Tab Name', 'Column Name']
             missing_cols = [col for col in required_glossary_columns if col not in df_glossary.columns]
             
@@ -33,7 +41,9 @@ def validate_file_structure(file_path):
             return f"Error reading 'README-Glossary' sheet. Please ensure the file format is correct. Header should be at row 7."
         
         try:
-            df_compute = pd.read_excel(file_path, sheet_name='Compute', header=5)
+            # Read from memory, no disk access
+            file_bytes.seek(0)  # Reset pointer to start
+            df_compute = pd.read_excel(file_bytes, sheet_name='Compute', header=5)
             
             if len(df_compute.columns) < 24:
                 return f"Invalid 'Compute' sheet structure. Expected at least 24 columns, found {len(df_compute.columns)}. Please upload the correct file."
@@ -47,7 +57,7 @@ def validate_file_structure(file_path):
 
 @app.route('/', methods=['GET', 'POST', 'OPTIONS'])
 def validate():
-    """Handle file upload and validation"""
+    """Handle file upload and validation - uses in-memory processing"""
     # Handle CORS preflight
     if request.method == 'OPTIONS':
         response = jsonify({"status": "ok"})
@@ -71,32 +81,42 @@ def validate():
     if file_ext not in allowed_extensions:
         return jsonify({"error": "Invalid file format. Please upload an Excel file (.xlsx or .xls)"}), 400
 
-    # Use temp directory
-    temp_dir = tempfile.gettempdir()
-    unique_id = str(uuid.uuid4())
-    input_filename = f"{unique_id}_{file.filename}"
-    input_path = os.path.join(temp_dir, input_filename)
-    output_filename = f"Report_{unique_id}.xlsx"
-    output_path = os.path.join(temp_dir, output_filename)
-
     try:
-        # Save uploaded file
-        file.save(input_path)
-
-        # Validate file structure before processing
-        validation_error = validate_file_structure(input_path)
+        # ✅ KEY FIX: Load file into memory (BytesIO) instead of disk
+        file_bytes = BytesIO(file.read())
+        
+        # Validate file structure using in-memory data
+        validation_error = validate_file_structure(file_bytes)
         if validation_error:
-            if os.path.exists(input_path):
-                os.remove(input_path)
             return jsonify({"error": validation_error}), 400
 
-        # Run validation logic
+        # ✅ Reset pointer and prepare for processing
+        file_bytes.seek(0)
+        
+        # Run validation logic with in-memory file
+        # Convert to temporary file only if validator requires file path
+        temp_dir = tempfile.gettempdir()
+        unique_id = str(uuid.uuid4())
+        input_filename = f"{unique_id}_{file.filename}"
+        input_path = os.path.join(temp_dir, input_filename)
+        output_filename = f"Report_{unique_id}.xlsx"
+        output_path = os.path.join(temp_dir, output_filename)
+        
+        # Save to temp directory temporarily for processing
+        file_bytes.seek(0)
+        with open(input_path, 'wb') as f:
+            f.write(file_bytes.read())
+        
         success, message, stats = generate_validation_report(input_path, output_path)
 
         if success:
-            # Send the generated report back to frontend with statistics in headers
+            # ✅ Load output into memory and return
+            with open(output_path, 'rb') as f:
+                output_bytes = BytesIO(f.read())
+            
+            output_bytes.seek(0)
             response = send_file(
-                output_path,
+                output_bytes,
                 as_attachment=True,
                 download_name='Compute_Validation_Report.xlsx',
                 mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
@@ -113,9 +133,14 @@ def validate():
     except Exception as e:
         return jsonify({"error": f"Processing error: {str(e)}"}), 500
     finally:
-        # Cleanup temp files
-        if os.path.exists(input_path):
-            os.remove(input_path)
+        # Cleanup temp files - only disk cleanup needed now
+        temp_dir = tempfile.gettempdir()
+        for filename in os.listdir(temp_dir):
+            if filename.startswith(unique_id):
+                try:
+                    os.remove(os.path.join(temp_dir, filename))
+                except:
+                    pass  # Ignore cleanup errors
 
 
 @app.after_request
