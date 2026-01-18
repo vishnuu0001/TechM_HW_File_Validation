@@ -43,15 +43,18 @@ def validate_file_structure(file_path):
         return f"Unable to read the Excel file. Please ensure it's a valid Excel file (.xlsx or .xls). Error: {str(e)}"
 
 
-@app.route('/', methods=['GET'])
-def index():
-    """Health check endpoint"""
-    return jsonify({"status": "ok", "message": "Excel Validator API"}), 200
-
-
-@app.route('/', methods=['POST'])
+@app.route('/', methods=['GET', 'POST', 'OPTIONS'])
 def validate():
     """Handle file upload and validation"""
+    # Handle OPTIONS for CORS preflight
+    if request.method == 'OPTIONS':
+        return '', 204
+    
+    # Handle GET for health check
+    if request.method == 'GET':
+        return jsonify({"status": "ok", "message": "Excel Validator API"}), 200
+    
+    # Handle POST for file upload
     if 'file' not in request.files:
         return jsonify({"error": "No file part"}), 400
 
@@ -111,12 +114,6 @@ def validate():
         # Cleanup
         if os.path.exists(input_path):
             os.remove(input_path)
-
-
-@app.route('/', methods=['OPTIONS'])
-def options():
-    """Handle CORS preflight"""
-    return '', 204
 
 
 @app.after_request
