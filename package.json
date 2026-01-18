@@ -1,0 +1,17 @@
+{
+  "name": "excel-validator-app",
+  "version": "1.0.0",
+  "description": "Excel validation tool with React frontend and Flask backend",
+  "scripts": {
+    "build": "cd frontend && npm install && npm run build",
+    "start": "cd frontend && npm start"
+  },
+  "keywords": [
+    "excel",
+    "validation",
+    "react",
+    "flask"
+  ],
+  "author": "",
+  "license": "ISC"
+}
