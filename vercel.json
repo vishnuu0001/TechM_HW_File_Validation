@@ -1,7 +1,7 @@
 {
-  "buildCommand": "npm run vercel-build --prefix frontend",
+  "buildCommand": "cd frontend && npm install && npm run build",
   "outputDirectory": "frontend/build",
-  "installCommand": "npm install --prefix frontend",
+  "framework": null,
   "functions": {
     "api/validate.py": {
       "runtime": "python3.9"
