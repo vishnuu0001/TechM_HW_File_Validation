@@ -3,8 +3,9 @@
   "version": "1.0.0",
   "description": "Excel validation tool with React frontend and Flask backend",
   "scripts": {
-    "build": "cd frontend && npm install && npm run build",
-    "start": "cd frontend && npm start"
+    "build": "npm run build --prefix frontend",
+    "start": "npm start --prefix frontend",
+    "vercel-build": "npm run build --prefix frontend"
   },
   "keywords": [
     "excel",
