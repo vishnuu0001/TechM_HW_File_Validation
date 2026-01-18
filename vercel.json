@@ -5,12 +5,6 @@
       "runtime": "python3.9"
     }
   },
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "/api/validate.py"
-    }
-  ],
   "headers": [
     {
       "source": "/api/(.*)",
