@@ -53,11 +53,16 @@ def validate_file_structure(file_path):
         return f"Unable to read the Excel file. Please ensure it's a valid Excel file (.xlsx or .xls). Error: {str(e)}"
 
 
-@app.route('/api/validate', methods=['POST', 'OPTIONS'])
+@app.route('/', methods=['POST', 'OPTIONS'])
 def validate():
     # Handle CORS preflight
     if request.method == 'OPTIONS':
-        return '', 204
+        response = jsonify({'status': 'ok'})
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+        response.headers['Access-Control-Expose-Headers'] = 'X-Report-Stats'
+        return response, 204
     
     if 'file' not in request.files:
         return jsonify({"error": "No file part"}), 400
@@ -107,6 +112,8 @@ def validate():
             if stats:
                 import json
                 response.headers['X-Report-Stats'] = json.dumps(stats)
+                response.headers['Access-Control-Allow-Origin'] = '*'
+                response.headers['Access-Control-Expose-Headers'] = 'X-Report-Stats'
             
             return response
         else:
@@ -123,7 +130,5 @@ def validate():
             pass
 
 
-# Vercel serverless function handler
-def handler(request):
-    with app.app_context():
-        return app.full_dispatch_request()
+# Vercel serverless function handler - this is what Vercel calls
+handler = app
