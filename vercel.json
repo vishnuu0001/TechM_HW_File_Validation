@@ -1,9 +1,8 @@
 {
-  "buildCommand": "npm install && npm run build",
-  "outputDirectory": "build",
-  "installCommand": "npm install",
+  "buildCommand": "npm install --prefix frontend && npm run build --prefix frontend && pip install -r requirements.txt",
+  "outputDirectory": "frontend/build",
   "functions": {
-    "api/**/*.py": {
+    "api/validate.py": {
       "runtime": "python3.9"
     }
   },
@@ -28,12 +27,6 @@
           "value": "X-Report-Stats"
         }
       ]
-    }
-  ],
-  "rewrites": [
-    {
-      "source": "/api/:path*",
-      "destination": "/api/:path*"
     }
   ]
 }
