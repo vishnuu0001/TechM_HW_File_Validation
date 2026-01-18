@@ -16,20 +16,38 @@ Error: Command exited with 254
 
 **Before (Broken):**
 ```json
-"buildCommand": "npm install --prefix frontend && npm run build --prefix frontend && pip install -r requirements.txt"
+{
+  "buildCommand": "npm install --prefix frontend && npm run build --prefix frontend && pip install -r requirements.txt",
+  "outputDirectory": "frontend/build"
+}
 ```
 
 **After (Fixed):**
 ```json
-"buildCommand": "cd frontend && npm install && npm run build && cd .. && pip install -r requirements.txt"
+{
+  "outputDirectory": "frontend/build",
+  "functions": {
+    "api/validate.py": {
+      "runtime": "python3.9"
+    }
+  },
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/api/validate.py"
+    }
+  ]
+}
 ```
 
 ### Why This Works
-- ✅ Explicitly changes directory to `frontend/`
-- ✅ Runs npm commands from correct location
-- ✅ Returns to root with `cd ..` for pip install
-- ✅ No path duplication
-- ✅ Works on Vercel's build system
+- ✅ **Auto-detection**: Vercel automatically detects root package.json
+- ✅ **Auto-install**: Vercel runs `npm install` then `npm run build` from root
+- ✅ **Root package.json script**: The build script already handles `cd frontend && npm install && npm run build`
+- ✅ **Python dependencies**: Vercel auto-installs from requirements.txt for serverless functions
+- ✅ **Routes**: Explicit routing for API endpoints
+- ✅ **No path issues**: No manual path navigation needed
+- ✅ **Vercel best practice**: Let Vercel handle the build process natively
 
 ---
 

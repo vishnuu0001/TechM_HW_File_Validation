@@ -1,12 +1,16 @@
 {
-  "buildCommand": "npm run build",
-  "installCommand": "cd frontend && npm install && cd .. && pip install -r requirements.txt",
   "outputDirectory": "frontend/build",
   "functions": {
     "api/validate.py": {
       "runtime": "python3.9"
     }
   },
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/api/validate.py"
+    }
+  ],
   "headers": [
     {
       "source": "/api/(.*)",
