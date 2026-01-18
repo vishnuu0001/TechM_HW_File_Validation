@@ -2,8 +2,8 @@ import axios from 'axios';
 
 // Use relative URL for Vercel deployment (works locally with proxy and in production)
 const API_BASE_URL = process.env.NODE_ENV === 'production' 
-  ? '/api'  // Vercel production
-  : 'http://localhost:5000/api';  // Local development
+  ? ''  // Vercel production - use relative path
+  : 'http://localhost:5000';  // Local development
 
 /**
  * Uploads the Excel file to the backend for validation.
@@ -16,7 +16,7 @@ export const validateFile = async (file, onProgress = null) => {
   formData.append('file', file);
 
   try {
-    const response = await axios.post(`${API_BASE_URL}/validate`, formData, {
+    const response = await axios.post(`${API_BASE_URL}/api/validate`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
